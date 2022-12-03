@@ -11,7 +11,7 @@ Just after my short conversation with `text-davinci-003`, its cousin [ChatGPT](h
 Thanks, OpenAI. Five minutes and 0.02$ saved me from a big headache, and a good excuse to further procrastinating the publication of my first article.
 
 ## Whisper paper - an initial analysis
-My inquiry journey started with a deep understanding of the paper, and resulted into this blog [article](LINK).
+My inquiry journey started with a deep understanding of the paper, and resulted into an article which will be shared shortly and linked here.
 
 This repo hosts the [notebook](src/whisper_paper/whisper_paper.ipynb) used to help me understanding the architecture and the paper, and generate some pltos.
 

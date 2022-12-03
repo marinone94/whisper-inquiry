@@ -14,9 +14,9 @@ The repository name was suggested by the new GPT3 model recently released by Ope
 
 [This](docs/repo_name.md) is the short conversation we had.
 
-Just after my short conversation with `text-davinci-003`, its cousin [ChatGPT](https://openai.com/blog/chatgpt/) was released. We had a similar chat, and [here](docs/repo_name_chatgpt.md) you can see how it went.
+Right after my short conversation with `text-davinci-003`, its cousin [ChatGPT](https://openai.com/blog/chatgpt/) was released. We had a similar chat, and [here](docs/repo_name_chatgpt.md) you can see how it went.
 
-Thanks, OpenAI. Five minutes and 0.02$ saved me from a big headache, and a good excuse to further procrastinating the publication of my first article.
+Thanks, OpenAI. Five minutes and 0.02$ saved me from a big headache, and from a good excuse to further procrastinate the publication of my first article.
 
 ## Whisper paper - an initial analysis
 My inquiry journey started with a deep understanding of the paper, and resulted into an article which will be shared shortly and linked here.

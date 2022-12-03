@@ -1,5 +1,13 @@
-# whisper-inquiry
-This repo hosts the code related to research and exploration activities related to Whisper.
+# Whisper inquiry
+This repo hosts the code related to research and exploration activities related to [Whisper](https://cdn.openai.com/papers/whisper.pdf). Citing from [OpenAI's repo](https://github.com/openai/whisper):
+
+"Whisper is a general-purpose speech recognition model. It is trained on a large dataset of diverse audio and is also a multi-task model that can perform multilingual speech recognition as well as speech translation and language identification."
+
+<div class="img-div-any-width" markdown="0">
+  <img src="./assets/img/whisper-approach-openai-repo.png" />
+  <br />
+
+</div>
 
 ## Repository name
 The repository name was suggested by the new GPT3 model recently released by OpenAI: GPT3 `text-davinci-003`. I adjusted the temperature during the conversation, all the other parameters were the default ones.

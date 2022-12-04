@@ -10,7 +10,7 @@ This repo hosts the code related to research and exploration activities related 
 </div>
 
 ## Repository name
-The repository name was suggested by the new GPT3 model recently released by OpenAI: GPT3 `text-davinci-003`. I adjusted the temperature during the conversation, all the other parameters were the default ones.
+The repository name was suggested by the new GPT-3 model recently released by OpenAI: GPT-3 `text-davinci-003`. I adjusted the temperature during the conversation, all the other parameters were the default ones.
 
 [This](docs/repo_name.md) is the short conversation we had.
 

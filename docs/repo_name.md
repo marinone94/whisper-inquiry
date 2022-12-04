@@ -1,6 +1,6 @@
-# A conversation with GPT3 davinci-003
+# A conversation with GPT-3 davinci-003
 
-This conversation occurred in the [OpenAI playground](https://beta.openai.com/playground) with the GPT3 `text-davinci-003` model.
+This conversation occurred in the [OpenAI playground](https://beta.openai.com/playground) with the GPT-3 `text-davinci-003` model.
 
 Programmatically, this snippet can be used instead.
 ```

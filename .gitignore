@@ -135,3 +135,6 @@ dmypy.json
 *runs/
 *wandb/
 *model/
+
+# Credentials
+creds.txt

@@ -1,3 +1,5 @@
+""" Whisper training script using Hugging Face Transformers. """
+
 import os  # used to create output directory
 from dataclasses import dataclass  # used to define data collator
 from math import ceil  # used to round up decimals
@@ -27,7 +29,7 @@ config = AutoConfig.from_pretrained(model_id)
 model = AutoModelForSpeechSeq2Seq.from_pretrained(model_id)
 
 dataset_id = "google/fleurs"
-dataset_language_code = "en_us"
+dataset_language_code = "sv_se"
 dataset = load_dataset(dataset_id, dataset_language_code, streaming=True)
 
 """The first time you run this code, make sure everything works fine using a small sample and low number of training steps. Just uncomment the next cell and run it. One note: since the dataset is loaded in streaming mode, the instruction will not be executed immediately. Instead, the dataset will be subsampled only when data will be needed during training."""
@@ -186,11 +188,11 @@ class ShuffleCallback(TrainerCallback):
 In our specific case, we could skip this step since English transcription is the default behaviour. Still, this is how you would do if you were in a multilingual setting.
 """
 
-processor.tokenizer.set_prefix_tokens(language="en", task="transcribe")
+# processor.tokenizer.set_prefix_tokens(language="en", task="transcribe")
 
 ## If you wanted to transcribe in Swedish
 ## (Of course, you'd need a Swedish dataset)
-# processor.tokenizer.set_prefix_tokens(language="sv", task="transcribe")
+processor.tokenizer.set_prefix_tokens(language="sv", task="transcribe")
 
 ## If you wanted to get an English transcription from Swedish audio
 # processor.tokenizer.set_prefix_tokens(language="sv", task="translate")
@@ -243,10 +245,6 @@ Last, we can track our training using several experiment tracking tools. I use W
 wandb.login()
 wandb.init(project="whisper-training-post")
 
-# Define (and create, if missing) output directory
-output_dir = "./model"
-os.makedirs(output_dir, exist_ok=True)
-
 # Check if we have a GPU.
 # In case, we will use mixed precision
 # to reduce memory footprint with
@@ -255,23 +253,24 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 use_fp16 = (device == "cuda")
 
 # Let's first define the batch sizes
-# Increase it if you have more than 16GB GPU
+# Adapt it to your hardware
 train_bs = 4 if test_script is True else 64
 eval_bs = 2 if test_script is True else 32
 
 # Then we infer the number of steps
 # TODO: how did I find it?
-num_training_samples = 2602
-num_epochs = 5
+num_training_samples = 2385
+num_epochs = 3
 max_steps_full_training = ceil(num_training_samples * num_epochs / train_bs)
 max_steps = 2 if test_script is True else max_steps_full_training
 
 # We don't want to evaluate too often since it slows down training a lot
-eval_steps = 1 if test_script is True else int(max_steps / 5)
+# but neither too little, since we want to see how the model is training
+eval_steps = 1 if test_script is True else int(max_steps / 10)
 logging_steps = 1 if test_script is True else int(max_steps / 100)
 
 training_args = Seq2SeqTrainingArguments(
-    output_dir=output_dir,
+    output_dir=".",
     do_train=True,
     do_eval=True,
     max_steps=max_steps,  
@@ -291,8 +290,8 @@ training_args = Seq2SeqTrainingArguments(
     predict_with_generate=True,
     generation_num_beams=1,
     # track experiment
-    # report_to="wandb",  # edit this line to track with your favourite experiment tracker(s)
-    report_to="none",  # uncomment this line to AVOID tracking the experiment with WandB
+    report_to="wandb",  # edit this line to track with your favourite experiment tracker(s)
+    # report_to="none",  # uncomment this line to AVOID tracking the experiment with WandB
 )
 
 """Now we can provide the trainer with the model, tokenizer (important: use the one you set language and task to! In this example, it is `processor.tokenizer`), training arguments, datasets, data collator, callback, and the method to compute metrics during evaluation.
@@ -318,29 +317,29 @@ I hope you haven't left yet. If you have, bad for you, as we are ready for train
 As Whisper is a pretrained model ready to be used off-the-shelf, it is advisable to evaluate it before training on both the validation and test sets. Let's make sure we make no harm to it.
 """
 
-# eval_metrics = trainer.evaluate(
-#     eval_dataset=preprocessed_dataset["validation"],
-#     metric_key_prefix="eval",
-#     max_length=448,
-#     num_beams=1,
-#     # gen_kwargs={"key": value}  to provide additional generation specific arguments by keyword
-# )
+eval_metrics = trainer.evaluate(
+    eval_dataset=preprocessed_dataset["validation"],
+    metric_key_prefix="eval",
+    max_length=448,
+    num_beams=1,
+    # gen_kwargs={"key": value}  to provide additional generation specific arguments by keyword
+)
 
-# trainer.log_metrics("eval", eval_metrics)
-# trainer.save_metrics("eval", eval_metrics)
-# print(eval_metrics)
+trainer.log_metrics("eval", eval_metrics)
+trainer.save_metrics("eval", eval_metrics)
+print(eval_metrics)
 
-# test_metrics = trainer.evaluate(
-#     eval_dataset=preprocessed_dataset["test"],
-#     metric_key_prefix="test",
-#     max_length=448,
-#     num_beams=1,
-#     # gen_kwargs={"key": value}  to provide additional generation specific arguments by keyword
-# )
+test_metrics = trainer.evaluate(
+    eval_dataset=preprocessed_dataset["test"],
+    metric_key_prefix="test",
+    max_length=448,
+    num_beams=1,
+    # gen_kwargs={"key": value}  to provide additional generation specific arguments by keyword
+)
 
-# trainer.log_metrics("test", test_metrics)
-# trainer.save_metrics("test", test_metrics)
-# print(test_metrics)
+trainer.log_metrics("test", test_metrics)
+trainer.save_metrics("test", test_metrics)
+print(test_metrics)
 
 train_result = trainer.train()
 trainer.save_model()
@@ -368,4 +367,6 @@ trainer.log_metrics("test", final_metrics)
 trainer.save_metrics("test", final_metrics)
 print(final_metrics)
 
+# Pushing to hub during training slows down training
+# so we push it only in the end.
 trainer.push_to_hub()

@@ -253,14 +253,14 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 use_fp16 = (device == "cuda")
 
 # Let's first define the batch sizes
-# Adapt it to your hardware
+# Adapt it to your hardware memory
 train_bs = 4 if test_script is True else 64
 eval_bs = 2 if test_script is True else 32
 
 # Then we infer the number of steps
 # TODO: how did I find it?
 num_training_samples = 2385
-num_epochs = 3
+num_epochs = 5
 max_steps_full_training = ceil(num_training_samples * num_epochs / train_bs)
 max_steps = 2 if test_script is True else max_steps_full_training
 
@@ -281,7 +281,7 @@ training_args = Seq2SeqTrainingArguments(
     save_strategy="steps",
     save_steps=eval_steps,
     save_total_limit=2,
-    learning_rate=1e-5,
+    learning_rate=5e-6,
 	warmup_ratio=0.5 if test_script is True else 0.2,
     per_device_train_batch_size=train_bs,
     per_device_eval_batch_size=eval_bs,

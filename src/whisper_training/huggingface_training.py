@@ -8,7 +8,7 @@ from math import ceil  # used to round up decimals
 import evaluate  # used to import and compute evaluation metrics
 import torch  # used to know if a GPU with CUDA is available
 import wandb  # used for experiment tracking
-from datasets import IterableDatasetDict, load_dataset  # used to load the dataset in streaming mode
+from datasets import DatasetDict, IterableDatasetDict, load_dataset  # used to load the dataset in streaming mode
 from transformers import (
     AutoConfig,  # used to load model configurations
     AutoModelForSpeechSeq2Seq,  # used to load the model architecture and weights
@@ -35,14 +35,19 @@ dataset = load_dataset(dataset_id, dataset_language_code, streaming=True)
 
 """The first time you run this code, make sure everything works fine using a small sample and low number of training steps. Just uncomment the next cell and run it. One note: since the dataset is loaded in streaming mode, the instruction will not be executed immediately. Instead, the dataset will be subsampled only when data will be needed during training."""
 
-# test_script = True
-test_script = False
+test_script = True
+# test_script = False
 
 ## Sample dataset for testing
 if test_script is True:
-    dataset["train"] = dataset["train"].shuffle(seed=42).take(8)
-    dataset["validation"] = dataset["validation"].shuffle(seed=42).take(4)
-    dataset["test"] = dataset["test"].shuffle(seed=42).take(4)
+    if isinstance(dataset, IterableDatasetDict):
+        dataset["train"] = dataset["train"].shuffle(seed=42).take(8)
+        dataset["validation"] = dataset["validation"].shuffle(seed=42).take(4)
+        dataset["test"] = dataset["test"].shuffle(seed=42).take(4)
+    elif isinstance(dataset, DatasetDict):
+        dataset["train"] = dataset["train"].shuffle(seed=42).select(range(8))
+        dataset["validation"] = dataset["validation"].shuffle(seed=42).select(range(4))
+        dataset["test"] = dataset["test"].shuffle(seed=42).select(range(4))
 
 """The raw dataset is not yet ready for training. As described in my first about Whisper, the input audio waveform needs to be transformed into a Log-mel Spectrogram. I recommend you to read the [Audio Preprocessing section](https://marinone94.github.io/Whisper-paper/#audio-preprocessing) to understand the process. For the scope of this article, you should just know that the audio is translated from the time domain to its frequency representation using a sliding window, and adjusted to simulate human hearing. The Whisper Feature Extractor included in the Whisper Processor will take care of the rest.
 

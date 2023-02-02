@@ -1,6 +1,7 @@
 """ Whisper training script using Hugging Face Transformers. """
 
-import os  # used to create output directory
+import os  # used to find checkpoints
+import shutil
 from dataclasses import dataclass  # used to define data collator
 from math import ceil  # used to round up decimals
 
@@ -34,8 +35,8 @@ dataset = load_dataset(dataset_id, dataset_language_code, streaming=True)
 
 """The first time you run this code, make sure everything works fine using a small sample and low number of training steps. Just uncomment the next cell and run it. One note: since the dataset is loaded in streaming mode, the instruction will not be executed immediately. Instead, the dataset will be subsampled only when data will be needed during training."""
 
-test_script = True
-# test_script = False
+# test_script = True
+test_script = False
 
 ## Sample dataset for testing
 if test_script is True:
@@ -239,11 +240,13 @@ Last, we can track our training using several experiment tracking tools. I use W
 
 ## If you don't want to track your experiment with WandB, run this!
 # os.environ["WANDB_DISABLED"] = "true"
+# report_to = "none"
 
 # If you have a wandb account, login!
 # Otherwise, edit this cell to loging with your favourite experiment tracker(s)
 wandb.login()
 wandb.init(project="whisper-training-post")
+report_to = "wandb"
 
 # Check if we have a GPU.
 # In case, we will use mixed precision
@@ -253,14 +256,14 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 use_fp16 = (device == "cuda")
 
 # Let's first define the batch sizes
-# Adapt it to your hardware memory
+# Adapt it to your hardware
 train_bs = 4 if test_script is True else 64
 eval_bs = 2 if test_script is True else 32
 
 # Then we infer the number of steps
 # TODO: how did I find it?
 num_training_samples = 2385
-num_epochs = 5
+num_epochs = 3
 max_steps_full_training = ceil(num_training_samples * num_epochs / train_bs)
 max_steps = 2 if test_script is True else max_steps_full_training
 
@@ -280,9 +283,12 @@ training_args = Seq2SeqTrainingArguments(
     logging_steps=logging_steps,
     save_strategy="steps",
     save_steps=eval_steps,
-    save_total_limit=2,
-    learning_rate=5e-6,
-	warmup_ratio=0.5 if test_script is True else 0.2,
+    save_total_limit=3,
+    learning_rate=7.5e-6,
+    load_best_model_at_end=True,
+    metric_for_best_model="wer",
+    greater_is_better=False,
+	warmup_ratio=0.5 if test_script is True else 0.3,
     per_device_train_batch_size=train_bs,
     per_device_eval_batch_size=eval_bs,
     # important
@@ -290,8 +296,7 @@ training_args = Seq2SeqTrainingArguments(
     predict_with_generate=True,
     generation_num_beams=1,
     # track experiment
-    report_to="wandb",  # edit this line to track with your favourite experiment tracker(s)
-    # report_to="none",  # uncomment this line to AVOID tracking the experiment with WandB
+    report_to=report_to
 )
 
 """Now we can provide the trainer with the model, tokenizer (important: use the one you set language and task to! In this example, it is `processor.tokenizer`), training arguments, datasets, data collator, callback, and the method to compute metrics during evaluation.
@@ -319,26 +324,26 @@ As Whisper is a pretrained model ready to be used off-the-shelf, it is advisable
 
 eval_metrics = trainer.evaluate(
     eval_dataset=preprocessed_dataset["validation"],
-    metric_key_prefix="eval",
+    metric_key_prefix="eval_pretrained",
     max_length=448,
     num_beams=1,
     # gen_kwargs={"key": value}  to provide additional generation specific arguments by keyword
 )
 
-trainer.log_metrics("eval", eval_metrics)
-trainer.save_metrics("eval", eval_metrics)
+trainer.log_metrics("eval_pretrained", eval_metrics)
+trainer.save_metrics("eval_pretrained", eval_metrics)
 print(eval_metrics)
 
 test_metrics = trainer.evaluate(
     eval_dataset=preprocessed_dataset["test"],
-    metric_key_prefix="test",
+    metric_key_prefix="test_pretrained",
     max_length=448,
     num_beams=1,
     # gen_kwargs={"key": value}  to provide additional generation specific arguments by keyword
 )
 
-trainer.log_metrics("test", test_metrics)
-trainer.save_metrics("test", test_metrics)
+trainer.log_metrics("test_pretrained", test_metrics)
+trainer.save_metrics("test_pretrained", test_metrics)
 print(test_metrics)
 
 train_result = trainer.train()
@@ -350,23 +355,27 @@ trainer.save_metrics("train", metrics)
 trainer.save_state()
 print(metrics)
 
-"""ADD SOMETHING ABOUT THE TRAINING.
+# """ADD SOMETHING ABOUT THE TRAINING.
 
-Now let's evaluate the 
-"""
+# Now let's evaluate the 
+# """
 
 final_metrics = trainer.evaluate(
     eval_dataset=preprocessed_dataset["test"],
-    metric_key_prefix="test",
+    metric_key_prefix="test_finetuned",
     max_length=448,
     num_beams=1,
     # gen_kwargs={"key": value}  to provide additional generation specific arguments by keyword
 )
 
-trainer.log_metrics("test", final_metrics)
-trainer.save_metrics("test", final_metrics)
+trainer.log_metrics("test_finetuned", final_metrics)
+trainer.save_metrics("test_finetuned", final_metrics)
 print(final_metrics)
 
 # Pushing to hub during training slows down training
 # so we push it only in the end.
+# Since training is completed and best model has been saved, we first delete the checkpoints
+for filename in os.listdir("."):
+    if filename.startswith("checkpoint-"):
+        shutil.rmtree(f"./{filename}")
 trainer.push_to_hub()

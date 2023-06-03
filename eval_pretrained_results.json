@@ -1,0 +1,7 @@
+{
+    "eval_pretrained_loss": 1.853564739227295,
+    "eval_pretrained_runtime": 73.2048,
+    "eval_pretrained_samples_per_second": 0.055,
+    "eval_pretrained_steps_per_second": 0.027,
+    "eval_pretrained_wer": 123.40425531914893
+}

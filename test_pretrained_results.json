@@ -1,0 +1,7 @@
+{
+    "test_pretrained_loss": 1.7791653871536255,
+    "test_pretrained_runtime": 123.7595,
+    "test_pretrained_samples_per_second": 0.032,
+    "test_pretrained_steps_per_second": 0.016,
+    "test_pretrained_wer": 127.90697674418605
+}

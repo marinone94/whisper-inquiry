@@ -1,5 +1,6 @@
 """ Whisper training script using Hugging Face Transformers. """
 
+import logging
 import os  # used to find checkpoints
 import shutil
 from dataclasses import dataclass  # used to define data collator
@@ -249,9 +250,13 @@ Last, we can track our training using several experiment tracking tools. I use W
 
 # If you have a wandb account, login!
 # Otherwise, edit this cell to loging with your favourite experiment tracker(s)
-wandb.login()
-wandb.init(project="whisper-training-post")
-report_to = "wandb"
+# try:
+#     wandb.login()
+#     wandb.init(project="whisper-training-post")
+#     report_to = "wandb"
+# except Exception as e:
+#     logging.exception("Failed init wandb")
+report_to = "none"
 
 # Check if we have a GPU.
 # In case, we will use mixed precision
@@ -360,11 +365,7 @@ trainer.save_metrics("train", metrics)
 trainer.save_state()
 print(metrics)
 
-# """ADD SOMETHING ABOUT THE TRAINING.
-
-# Now let's evaluate the 
-# """
-
+# Now let's evaluate the final model on the test set.
 final_metrics = trainer.evaluate(
     eval_dataset=preprocessed_dataset["test"],
     metric_key_prefix="test_finetuned",
